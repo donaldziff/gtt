@@ -31,3 +31,22 @@ If you use our materials, please cite
   year={2021}
 }
 ```
+
+## Max Ziff's modifications to the orginal repo
+
+My modifications consist in the following:
+
+* Minor bug-fixes and feature enhancements to the primary implementation files: `./model_gtt/run_pl_gtt.py` and `./model_gtt/transformer_base.py`
+* New testing harness and data collection: `./model_gtt/run_pl_max.sh`, `./gather_scores.sh` and `clean.sh`
+* Test scripts: `./model_gtt/experiment*.sh` and `./model_gtt/test*.sh`
+* Jupyter notebook for producing graphs: `./graphs.ipynb`
+
+I ran the experiment and test scripts and created many model checkpoints derived from various BERT-models as described.
+
+I gathered the results as follows:
+
+```
+bash ./gather_scores.sh > results.txt
+cat results.txt | bash clean.sh > clean-results.csv
+```
+

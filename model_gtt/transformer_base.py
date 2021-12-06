@@ -254,6 +254,7 @@ def add_generic_args(parser, root_dir):
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
+    parser.add_argument("--save_top_k", type=int, default=5, help="number of checkpoints to save (0 for none, -1 for all)")
 
 def generic_train(model, args):
     # init model
@@ -271,9 +272,12 @@ def generic_train(model, args):
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train:
         raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
 
+    save_top_k = args.save_top_k or 5
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=args.output_dir, prefix="checkpoint", monitor="val_accuracy", mode="max", save_top_k=5
+        filepath=args.output_dir, prefix="checkpoint", monitor="val_accuracy", mode="max", save_top_k=save_top_k
     )
+
+    tb_logger = pl.loggers.TensorBoardLogger(save_dir=f"{args.output_dir}/lightning_logs/")
 
     train_params = dict(
         accumulate_grad_batches=args.gradient_accumulation_steps,
@@ -283,6 +287,7 @@ def generic_train(model, args):
         gradient_clip_val=args.max_grad_norm,
         checkpoint_callback=checkpoint_callback,
         callbacks=[LoggingCallback()],
+        logger=tb_logger,
     )
 
     if args.fp16:

@@ -489,6 +489,14 @@ class NERTransformer(BaseTransformer):
         parser.add_argument("--debug", action="store_true", help="if in debug mode")
 
         parser.add_argument("--thresh", default=1, type=float, help="thresh for predicting [SEP]",)
+
+        parser.add_argument(
+            "--use_checkpoint",
+            default=None,
+            type=str,
+            help="load the model from the specified checkpoint (predict only)"
+        )
+
         return parser
 
 
@@ -503,12 +511,16 @@ if __name__ == "__main__":
     trainer = generic_train(model, args)
 
     if args.do_predict:
-        # See https://github.com/huggingface/transformers/issues/3159
-        # pl use this format to create a checkpoint:
-        # https://github.com/PyTorchLightning/pytorch-lightning/blob/master\
-        # /pytorch_lightning/callbacks/model_checkpoint.py#L169
-        checkpoints = list(sorted(glob.glob(os.path.join(args.output_dir, "checkpointepoch=*.ckpt"), recursive=True)))
-        model = NERTransformer.load_from_checkpoint(checkpoints[-1])
+        if args.use_checkpoint:
+            checkpoint_file = os.path.join(args.output_dir, args.use_checkpoint)
+        else:                                      
+            # note: the code below has a bug because the checkpoint numbers are not padded so do not
+            # sort lexically. Example: if there are two, checkpointepoch=10.ckpt and checkpointepoch=9.ckpt
+            # then 9 will be chosen from the list
+            checkpoints = list(sorted(glob.glob(os.path.join(args.output_dir, "checkpointepoch=*.ckpt"), recursive=True)))
+            checkpoint_file = checkpoints[-1]
+        logger.info(f"predicting from {checkpoint_file}")
+        model = NERTransformer.load_from_checkpoint(checkpoint_file)
         if args.debug:
             model.hparams.debug = True
         trainer.test(model)
